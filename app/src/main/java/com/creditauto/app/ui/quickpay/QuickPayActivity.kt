@@ -26,16 +26,16 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,16 +48,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.creditauto.app.MainActivity
 import com.creditauto.app.data.location.LocationHelper
+import com.creditauto.app.domain.CardRecommendation
+import com.creditauto.app.domain.DetectedStore
 import com.creditauto.app.domain.SpendCategory
+import com.creditauto.app.ui.CreditAutoUiState
 import com.creditauto.app.ui.CreditAutoViewModel
 import com.creditauto.app.ui.components.HeroRecommendationCard
 import com.creditauto.app.ui.components.RunnerUpCardRow
+import com.creditauto.app.ui.components.categoryIcon
 import com.creditauto.app.ui.theme.CreditAutoTheme
 import kotlin.math.roundToInt
 
@@ -69,7 +72,7 @@ class QuickPayActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         setContent {
-            CreditAutoTheme {
+            CreditAutoTheme(transparentSystemBars = false) {
                 val uiState by viewModel.uiState.collectAsState()
 
                 val permissionLauncher = rememberLauncherForActivityResult(
@@ -119,16 +122,18 @@ class QuickPayActivity : ComponentActivity() {
 
 @Composable
 private fun QuickPayOverlaySheet(
-    uiState: com.creditauto.app.ui.CreditAutoUiState,
+    uiState: CreditAutoUiState,
     onDismiss: () -> Unit,
     onRefreshLocation: () -> Unit,
     onSelectCategory: (SpendCategory) -> Unit,
-    onSelectStore: (com.creditauto.app.domain.DetectedStore) -> Unit,
+    onSelectStore: (DetectedStore) -> Unit,
     onToggleNoAmex: () -> Unit,
     onToggleVisaOnly: () -> Unit,
-    onOpenWallet: (com.creditauto.app.domain.CardRecommendation?) -> Unit,
+    onOpenWallet: (CardRecommendation?) -> Unit,
     onOpenFullApp: () -> Unit
 ) {
+    val store = uiState.session.selectedStore
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -148,51 +153,57 @@ private fun QuickPayOverlaySheet(
                     onClick = {}
                 ),
             shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-            color = MaterialTheme.colorScheme.background,
-            tonalElevation = 8.dp
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 6.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 18.dp, vertical = 14.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
             ) {
-                // Drag handle
+                // Material 3 standard bottom sheet drag handle (32x4 dp)
                 Box(
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .size(width = 40.dp, height = 4.dp)
-                        .clip(RoundedCornerShape(2.dp))
-                        .background(MaterialTheme.colorScheme.outline)
+                        .size(width = 32.dp, height = 4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Header with store info + refresh + close
+                // Store header row
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = categoryIcon(store.category),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = uiState.session.selectedStore.name,
+                            text = store.name,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
-                        val distText = uiState.session.selectedStore.distanceMeters?.let {
-                            " • ${it.roundToInt()}m"
-                        }.orEmpty()
+                        val distText = store.distanceMeters?.let { " • ${it.roundToInt()}m" }.orEmpty()
                         Text(
-                            text = "${uiState.session.selectedStore.category.displayName}$distText",
+                            text = "${store.category.displayName}$distText",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -200,33 +211,55 @@ private fun QuickPayOverlaySheet(
 
                     if (uiState.session.isDetectingStore) {
                         CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .size(20.dp),
                             strokeWidth = 2.dp
                         )
                     } else {
-                        IconButton(onClick = onRefreshLocation) {
-                            Icon(Icons.Rounded.Refresh, contentDescription = "Refresh location")
+                        FilledTonalIconButton(
+                            onClick = onRefreshLocation,
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                contentDescription = "Refresh location",
+                                modifier = Modifier.size(18.dp)
+                            )
                         }
                     }
 
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Rounded.Close, contentDescription = "Close")
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    FilledTonalIconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(18.dp)
+                        )
                     }
                 }
 
-                // Nearby stores switcher if multiple found
+                // Nearby stores switcher
                 if (uiState.session.nearbyStores.size > 1) {
                     LazyRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
+                        contentPadding = PaddingValues(top = 10.dp)
                     ) {
-                        items(uiState.session.nearbyStores.take(5)) { store ->
+                        items(
+                            items = uiState.session.nearbyStores.take(6),
+                            key = { "${it.source.name}_${it.name}" }
+                        ) { nearby ->
                             FilterChip(
-                                selected = store.name == uiState.session.selectedStore.name,
-                                onClick = { onSelectStore(store) },
+                                selected = nearby.name == store.name,
+                                onClick = { onSelectStore(nearby) },
+                                shape = CircleShape,
                                 label = {
                                     Text(
-                                        text = store.name,
+                                        text = nearby.name,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
@@ -237,45 +270,51 @@ private fun QuickPayOverlaySheet(
                 }
 
                 // Quick category pills
-                val quickCategories = listOf(
-                    SpendCategory.GROCERY,
-                    SpendCategory.DINING,
-                    SpendCategory.GAS,
-                    SpendCategory.WHOLESALE_CLUB,
-                    SpendCategory.DRUGSTORE,
-                    SpendCategory.OTHER
-                )
+                val quickCategories = remember {
+                    listOf(
+                        SpendCategory.GROCERY,
+                        SpendCategory.DINING,
+                        SpendCategory.GAS,
+                        SpendCategory.WHOLESALE_CLUB,
+                        SpendCategory.DRUGSTORE,
+                        SpendCategory.OTHER
+                    )
+                }
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(top = 6.dp)
                 ) {
-                    items(quickCategories) { cat ->
+                    items(quickCategories, key = { it.name }) { cat ->
                         FilterChip(
-                            selected = uiState.session.selectedStore.category == cat,
+                            selected = store.category == cat,
                             onClick = { onSelectCategory(cat) },
+                            shape = CircleShape,
                             label = { Text(cat.shortLabel) }
                         )
                     }
                 }
 
-                // Network restriction quick toggles
+                // Network toggles + open full app
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(vertical = 2.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
                 ) {
                     FilterChip(
                         selected = !uiState.session.allowAmex,
                         onClick = onToggleNoAmex,
+                        shape = CircleShape,
                         label = { Text("No Amex") }
                     )
                     FilterChip(
                         selected = uiState.session.visaOnlyOverride,
                         onClick = onToggleVisaOnly,
-                        label = { Text("Visa Only") }
+                        shape = CircleShape,
+                        label = { Text("Visa only") }
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     TextButton(onClick = onOpenFullApp) {
-                        Text("Full App")
+                        Text("Full app")
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             Icons.AutoMirrored.Rounded.OpenInNew,
@@ -284,8 +323,6 @@ private fun QuickPayOverlaySheet(
                         )
                     }
                 }
-
-                Spacer(modifier = Modifier.height(6.dp))
 
                 val topRec = uiState.recommendations.firstOrNull()
                 if (topRec != null) {
@@ -301,20 +338,21 @@ private fun QuickPayOverlaySheet(
                         RunnerUpCardRow(
                             rank = 2,
                             recommendation = runnerUp,
+                            shape = RoundedCornerShape(22.dp),
                             onSelectForWallet = { onOpenWallet(runnerUp) }
                         )
                     }
                 } else {
                     Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(22.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(
-                            text = "No matching cards in your wallet for these filters. Tap Full App to add or enable cards.",
+                            text = "No matching cards in your wallet for these filters. Tap Full app to manage cards.",
                             modifier = Modifier.padding(16.dp),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Unspecified
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

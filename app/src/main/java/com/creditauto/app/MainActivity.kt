@@ -11,19 +11,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Contactless
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Place
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Contactless
 import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Settings
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -34,7 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -46,11 +52,16 @@ import com.creditauto.app.ui.screens.SavedPlacesScreen
 import com.creditauto.app.ui.screens.SettingsScreen
 import com.creditauto.app.ui.theme.CreditAutoTheme
 
-private enum class MainTab(val title: String, val icon: ImageVector) {
-    PAY_NOW("Pay Now", Icons.Rounded.Contactless),
-    MY_CARDS("My Cards", Icons.Rounded.CreditCard),
-    PLACES("Places", Icons.Rounded.Place),
-    SETTINGS("Settings", Icons.Rounded.Settings)
+private enum class MainTab(
+    val label: String,
+    val headerTitle: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
+) {
+    PAY_NOW("Pay", "Credit Auto", Icons.Rounded.Contactless, Icons.Outlined.Contactless),
+    MY_CARDS("Cards", "My cards", Icons.Rounded.CreditCard, Icons.Outlined.CreditCard),
+    PLACES("Places", "Saved places", Icons.Rounded.Place, Icons.Outlined.Place),
+    SETTINGS("Settings", "Settings", Icons.Rounded.Settings, Icons.Outlined.Settings)
 }
 
 class MainActivity : ComponentActivity() {
@@ -88,6 +99,7 @@ private fun CreditAutoRoot(
     var pendingEnableBackgroundPrefetch by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val lifecycleOwner = LocalLifecycleOwner.current
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     val backgroundPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -117,7 +129,6 @@ private fun CreditAutoRoot(
         }
     }
 
-    // Automatically check cache / update nearby stores every time user returns to the app
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -149,25 +160,40 @@ private fun CreditAutoRoot(
     }
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(
-                        text = if (activeTab == MainTab.PAY_NOW) "Credit Auto" else activeTab.title,
-                        fontWeight = FontWeight.Bold
+                        text = activeTab.headerTitle,
+                        style = MaterialTheme.typography.headlineMedium
                     )
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                ),
+                scrollBehavior = scrollBehavior
             )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            ) {
                 MainTab.entries.forEach { tab ->
+                    val selected = activeTab == tab
                     NavigationBarItem(
-                        selected = activeTab == tab,
+                        selected = selected,
                         onClick = { activeTab = tab },
-                        icon = { Icon(tab.icon, contentDescription = tab.title) },
-                        label = { Text(tab.title) }
+                        icon = {
+                            Icon(
+                                imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                contentDescription = tab.label
+                            )
+                        },
+                        label = { Text(tab.label) }
                     )
                 }
             }

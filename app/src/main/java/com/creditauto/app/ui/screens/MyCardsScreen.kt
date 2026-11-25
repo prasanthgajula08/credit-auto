@@ -4,12 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,23 +26,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CreditCard
-import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LibraryAdd
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -49,6 +58,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -71,103 +81,143 @@ fun MyCardsScreen(
     onDeleteCard: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var showCatalogDialog by remember { mutableStateOf(false) }
+    var showCatalogSheet by remember { mutableStateOf(false) }
     var editingCard by remember { mutableStateOf<CreditCard?>(null) }
     var isCreatingNew by remember { mutableStateOf(false) }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Button(
-                    onClick = { showCatalogDialog = true },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp)
+    val activeCount = remember(uiState.ownedCards) { uiState.ownedCards.count { it.isActive } }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item(key = "wallet_header") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(Icons.Rounded.LibraryAdd, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Card Catalog")
-                }
-                OutlinedButton(
-                    onClick = {
-                        isCreatingNew = true
-                        editingCard = CreditCard(
-                            id = "custom_${UUID.randomUUID()}",
-                            name = "",
-                            issuer = "",
-                            network = CardNetwork.VISA,
-                            isOwned = true,
-                            isActive = true,
-                            rewardCurrency = RewardCurrency.CASH_BACK,
-                            baseRate = 1.5
+                    Column {
+                        Text(
+                            text = "Your wallet",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
                         )
+                        Text(
+                            text = "$activeCount active of ${uiState.ownedCards.size} saved",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            isCreatingNew = true
+                            editingCard = CreditCard(
+                                id = "custom_${UUID.randomUUID()}",
+                                name = "",
+                                issuer = "",
+                                network = CardNetwork.VISA,
+                                isOwned = true,
+                                isActive = true,
+                                rewardCurrency = RewardCurrency.CASH_BACK,
+                                baseRate = 1.5
+                            )
+                        },
+                        shape = CircleShape,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                    ) {
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Custom card")
+                    }
+                }
+            }
+
+            if (uiState.ownedCards.isEmpty()) {
+                item(key = "empty_wallet") {
+                    Surface(
+                        shape = RoundedCornerShape(24.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerLow,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primaryContainer),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    Icons.Rounded.CreditCard,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Add your credit cards",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Pick from 27 preloaded US cards or add your own custom card rules.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            items(uiState.ownedCards, key = { it.id }) { card ->
+                OwnedCardItem(
+                    card = card,
+                    onToggleActive = { onToggleCardActive(card.id, it) },
+                    onEdit = {
+                        isCreatingNew = false
+                        editingCard = card
                     },
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Custom Card")
-                }
+                    onRemove = { onToggleCardOwned(card.id, false) }
+                )
             }
         }
 
-        item {
-            Text(
-                text = "Your Wallet (${uiState.ownedCards.size} cards)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        if (uiState.ownedCards.isEmpty()) {
-            item {
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "Tap \"Card Catalog\" to pick from 22 popular US cards or \"Custom Card\" to add your own.",
-                        modifier = Modifier.padding(18.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-
-        items(uiState.ownedCards, key = { it.id }) { card ->
-            OwnedCardItem(
-                card = card,
-                onToggleActive = { onToggleCardActive(card.id, it) },
-                onEdit = {
-                    isCreatingNew = false
-                    editingCard = card
-                },
-                onRemove = { onToggleCardOwned(card.id, false) }
-            )
-        }
-
-        item { Spacer(modifier = Modifier.height(16.dp)) }
+        // Material 3 Extended FAB for Card Catalog
+        ExtendedFloatingActionButton(
+            onClick = { showCatalogSheet = true },
+            icon = { Icon(Icons.Rounded.LibraryAdd, contentDescription = null) },
+            text = { Text("Card catalog") },
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
     }
 
-    if (showCatalogDialog) {
-        CardCatalogDialog(
+    if (showCatalogSheet) {
+        CardCatalogBottomSheet(
             allCards = uiState.allCards,
             onToggleOwned = onToggleCardOwned,
-            onDismiss = { showCatalogDialog = false }
+            onDismiss = { showCatalogSheet = false }
         )
     }
 
     val cardToEdit = editingCard
     if (cardToEdit != null) {
-        CardEditorDialog(
+        CardEditorBottomSheet(
             card = cardToEdit,
             isNew = isCreatingNew,
             onDismiss = { editingCard = null },
@@ -187,6 +237,7 @@ fun MyCardsScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun OwnedCardItem(
     card: CreditCard,
@@ -194,83 +245,121 @@ private fun OwnedCardItem(
     onEdit: () -> Unit,
     onRemove: () -> Unit
 ) {
+    val baseColor = Color(card.colorHex)
+    val accentColor = Color(card.accentHex)
+
     Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Mini credit-card artwork badge
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(Color(card.colorHex)),
+                        .size(width = 52.dp, height = 34.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            Brush.linearGradient(
+                                listOf(baseColor, accentColor.copy(alpha = 0.55f))
+                            )
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.CreditCard,
-                        contentDescription = null,
-                        tint = Color(card.accentHex),
-                        modifier = Modifier.size(20.dp)
+                    Text(
+                        text = card.network.shortBadge,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black
                     )
                 }
-                Spacer(modifier = Modifier.width(12.dp))
+
+                Spacer(modifier = Modifier.width(14.dp))
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = card.displayLabel(),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "${card.issuer} • ${card.network.displayName} • ${card.rewardCurrency.displayName}",
+                        text = "${card.issuer} • ${card.rewardCurrency.displayName}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+
                 Switch(
                     checked = card.isActive,
-                    onCheckedChange = onToggleActive
+                    onCheckedChange = onToggleActive,
+                    thumbContent = if (card.isActive) {
+                        {
+                            Icon(
+                                imageVector = Icons.Rounded.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(SwitchDefaults.IconSize)
+                            )
+                        }
+                    } else {
+                        null
+                    }
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            val highlights = buildList {
-                card.mobileWalletRate?.let { add("${fmt(it)}${card.rewardCurrency.unitLabel} Google Pay") }
-                card.categoryRates.entries
-                    .sortedByDescending { it.value }
-                    .take(4)
-                    .forEach { (cat, rate) ->
-                        add("${fmt(rate)}${card.rewardCurrency.unitLabel} ${cat.shortLabel}")
+            val pills = remember(card) {
+                buildList {
+                    card.mobileWalletRate?.let { add("${fmt(it)}${card.rewardCurrency.unitLabel} Google Pay") }
+                    card.categoryRates.entries
+                        .sortedByDescending { it.value }
+                        .take(4)
+                        .forEach { (cat, rate) ->
+                            add("${fmt(rate)}${card.rewardCurrency.unitLabel} ${cat.shortLabel}")
+                        }
+                    add("${fmt(card.baseRate)}${card.rewardCurrency.unitLabel} Base")
+                }
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                pills.forEach { pillText ->
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Text(
+                            text = pillText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
                     }
-                add("${fmt(card.baseRate)}${card.rewardCurrency.unitLabel} Base")
-            }.joinToString("  •  ")
+                }
+            }
 
-            Text(
-                text = highlights,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
-            )
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(onClick = onEdit) {
                     Icon(Icons.Rounded.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Edit Rates & Last 4")
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Edit rates & last 4")
                 }
                 IconButton(onClick = onRemove) {
                     Icon(
-                        Icons.Rounded.Delete,
+                        Icons.Rounded.DeleteOutline,
                         contentDescription = "Remove from wallet",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -280,12 +369,14 @@ private fun OwnedCardItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CardCatalogDialog(
+private fun CardCatalogBottomSheet(
     allCards: List<CreditCard>,
     onToggleOwned: (String, Boolean) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var query by remember { mutableStateOf("") }
     val filtered = remember(allCards, query) {
         if (query.isBlank()) allCards
@@ -296,85 +387,125 @@ private fun CardCatalogDialog(
         }
     }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Select Your Credit Cards") },
-        text = {
-            Column(modifier = Modifier.height(440.dp)) {
-                OutlinedTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text("Search Chase, Amex, Citi, Costco...") },
-                    leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(580.dp)
+                .navigationBarsPadding()
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Select your cards",
+                    style = MaterialTheme.typography.headlineSmall
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    items(filtered, key = { it.id }) { card ->
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (card.isOwned) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                            onClick = { onToggleOwned(card.id, !card.isOwned) }
+                Button(onClick = onDismiss, shape = CircleShape) {
+                    Text("Done")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            TextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text("Search Chase, Amex, Capital One, Citi…") },
+                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+                singleLine = true,
+                shape = CircleShape,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(CircleShape)
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                items(filtered, key = { it.id }) { card ->
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = if (card.isOwned) {
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                        } else {
+                            MaterialTheme.colorScheme.surfaceContainer
+                        },
+                        onClick = { onToggleOwned(card.id, !card.isOwned) }
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 14.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .size(width = 36.dp, height = 24.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(Color(card.colorHex)),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(14.dp)
-                                        .clip(CircleShape)
-                                        .background(Color(card.colorHex))
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = card.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        text = card.notes.ifBlank { "${card.issuer} • ${card.network.displayName}" },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2
-                                    )
-                                }
-                                Checkbox(
-                                    checked = card.isOwned,
-                                    onCheckedChange = { onToggleOwned(card.id, it) }
+                                Text(
+                                    text = card.network.shortBadge,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = card.name,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                Text(
+                                    text = card.notes.ifBlank { "${card.issuer} • ${card.network.displayName}" },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 2
+                                )
+                            }
+                            Checkbox(
+                                checked = card.isOwned,
+                                onCheckedChange = { onToggleOwned(card.id, it) }
+                            )
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Done")
-            }
         }
-    )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CardEditorDialog(
+private fun CardEditorBottomSheet(
     card: CreditCard,
     isNew: Boolean,
     onDismiss: () -> Unit,
     onSave: (CreditCard) -> Unit,
     onDelete: (() -> Unit)?
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var name by remember { mutableStateOf(card.name) }
     var issuer by remember { mutableStateOf(card.issuer) }
     var nickname by remember { mutableStateOf(card.walletNickname) }
@@ -395,29 +526,82 @@ private fun CardEditorDialog(
         SpendCategory.entries.filter { it != SpendCategory.OTHER }
     }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text(if (isNew) "Add Custom Card" else "Edit ${card.name}") },
-        text = {
-            LazyColumn(
-                modifier = Modifier.height(460.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(600.dp)
+                .navigationBarsPadding()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                item(key = "name_fields") {
+                Text(
+                    text = if (isNew) "New custom card" else "Edit card",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Button(
+                    onClick = {
+                        val cleanName = name.trim()
+                        if (cleanName.isBlank()) return@Button
+                        val parsedCategories = categoryRateStrings.entries.mapNotNull { (cat, str) ->
+                            val parsed = str.trim().toDoubleOrNull()
+                            if (parsed != null && parsed > 0.0) cat to parsed else null
+                        }.toMap()
+
+                        onSave(
+                            card.copy(
+                                name = cleanName,
+                                issuer = issuer.trim().ifBlank { "Custom" },
+                                walletNickname = nickname.trim(),
+                                lastFour = lastFour.trim(),
+                                network = network,
+                                rewardCurrency = currency,
+                                baseRate = baseRateText.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 1.0,
+                                mobileWalletRate = mobileWalletRateText.toDoubleOrNull()?.takeIf { it > 0.0 },
+                                hasForeignTransactionFee = hasFtf,
+                                categoryRates = parsedCategories,
+                                isOwned = true
+                            )
+                        )
+                    },
+                    shape = CircleShape
+                ) {
+                    Text("Save")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item(key = "basic_fields") {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         OutlinedTextField(
                             value = name,
                             onValueChange = { name = it },
                             label = { Text("Card name") },
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OutlinedTextField(
                                 value = issuer,
                                 onValueChange = { issuer = it },
                                 label = { Text("Issuer") },
                                 singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             OutlinedTextField(
@@ -425,8 +609,9 @@ private fun CardEditorDialog(
                                 onValueChange = { if (it.length <= 4) lastFour = it.filter(Char::isDigit) },
                                 label = { Text("Last 4") },
                                 singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.width(100.dp)
+                                modifier = Modifier.width(104.dp)
                             )
                         }
                         OutlinedTextField(
@@ -434,41 +619,45 @@ private fun CardEditorDialog(
                             onValueChange = { nickname = it },
                             label = { Text("Google Wallet nickname (optional)") },
                             singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
 
-                item(key = "network_currency") {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Network", style = MaterialTheme.typography.labelMedium)
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                item(key = "network_and_rates") {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text("Network", style = MaterialTheme.typography.labelLarge)
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             CardNetwork.entries.forEach { net ->
                                 FilterChip(
                                     selected = network == net,
                                     onClick = { network = net },
+                                    shape = CircleShape,
                                     label = { Text(net.shortBadge) }
                                 )
                             }
                         }
 
-                        Text("Reward currency", style = MaterialTheme.typography.labelMedium)
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("Reward currency", style = MaterialTheme.typography.labelLarge)
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(RewardCurrency.entries, key = { it.name }) { curr ->
                                 FilterChip(
                                     selected = currency == curr,
                                     onClick = { currency = curr },
+                                    shape = CircleShape,
                                     label = { Text(curr.displayName) }
                                 )
                             }
                         }
 
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OutlinedTextField(
                                 value = baseRateText,
                                 onValueChange = { baseRateText = it },
                                 label = { Text("Base rate") },
                                 singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f)
                             )
@@ -478,6 +667,7 @@ private fun CardEditorDialog(
                                 label = { Text("Google Pay bonus") },
                                 placeholder = { Text("e.g. 3") },
                                 singleLine = true,
+                                shape = RoundedCornerShape(16.dp),
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 modifier = Modifier.weight(1f)
                             )
@@ -488,14 +678,14 @@ private fun CardEditorDialog(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Charges foreign transaction fee (~3%)")
+                            Text("Foreign transaction fee (~3%)", style = MaterialTheme.typography.bodyMedium)
                             Switch(checked = hasFtf, onCheckedChange = { hasFtf = it })
                         }
 
                         Text(
-                            text = "Category bonus multipliers (leave blank for base rate)",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold
+                            text = "Category bonus multipliers",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -507,7 +697,7 @@ private fun CardEditorDialog(
                     ) {
                         Text(
                             text = cat.displayName,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
@@ -515,55 +705,23 @@ private fun CardEditorDialog(
                             onValueChange = { categoryRateStrings[cat] = it },
                             placeholder = { Text("—") },
                             singleLine = true,
+                            shape = RoundedCornerShape(14.dp),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                            modifier = Modifier.width(86.dp)
+                            modifier = Modifier.width(88.dp)
                         )
                     }
                 }
 
                 if (onDelete != null) {
-                    item(key = "delete_btn") {
+                    item(key = "delete_custom") {
                         TextButton(onClick = onDelete) {
                             Text("Delete custom card", color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val cleanName = name.trim()
-                    if (cleanName.isBlank()) return@Button
-                    val parsedCategories = categoryRateStrings.entries.mapNotNull { (cat, str) ->
-                        val parsed = str.trim().toDoubleOrNull()
-                        if (parsed != null && parsed > 0.0) cat to parsed else null
-                    }.toMap()
-
-                    onSave(
-                        card.copy(
-                            name = cleanName,
-                            issuer = issuer.trim().ifBlank { "Custom" },
-                            walletNickname = nickname.trim(),
-                            lastFour = lastFour.trim(),
-                            network = network,
-                            rewardCurrency = currency,
-                            baseRate = baseRateText.toDoubleOrNull()?.coerceAtLeast(0.0) ?: 1.0,
-                            mobileWalletRate = mobileWalletRateText.toDoubleOrNull()?.takeIf { it > 0.0 },
-                            hasForeignTransactionFee = hasFtf,
-                            categoryRates = parsedCategories,
-                            isOwned = true
-                        )
-                    )
-                }
-            ) {
-                Text("Save")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
-    )
+    }
 }
 
 private fun fmt(value: Double): String =
