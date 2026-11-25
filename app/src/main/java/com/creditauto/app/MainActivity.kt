@@ -275,7 +275,6 @@ private fun CreditAutoRoot(
                 onUpdateSearchRadius = { viewModel.updateSearchRadius(it) },
                 onUpdateShowNotification = { viewModel.updateShowCheckoutNotification(it) },
                 onUpdateDefaultMobileWallet = { viewModel.updateDefaultUseMobileWallet(it) },
-                onTestOpenWallet = { viewModel.launchGoogleWallet() },
                 modifier = contentModifier
             )
         }

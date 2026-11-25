@@ -9,14 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AccountBalanceWallet
 import androidx.compose.material.icons.rounded.SystemUpdate
-import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -58,7 +55,6 @@ fun SettingsScreen(
     onUpdateSearchRadius: (Int) -> Unit,
     onUpdateShowNotification: (Boolean) -> Unit,
     onUpdateDefaultMobileWallet: (Boolean) -> Unit,
-    onTestOpenWallet: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val settings = uiState.settings
@@ -71,50 +67,6 @@ fun SettingsScreen(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // Quick Settings Tile Setup Card
-        item {
-            Surface(
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.primaryContainer
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Rounded.Tune,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Fastest Checkout: Quick Settings Tile",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Swipe down from the top of your screen twice -> tap the Edit (pencil) icon -> drag the \"Best Card\" tile to your top row. At any checkout, pull down and tap it to detect the store, see your #1 card, and jump straight to Google Wallet.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    OutlinedButton(onClick = onTestOpenWallet) {
-                        Icon(
-                            Icons.Rounded.AccountBalanceWallet,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            if (uiState.isGoogleWalletInstalled) "Test Open Google Wallet"
-                            else "Open Android Tap & Pay Settings"
-                        )
-                    }
-                }
-            }
-        }
-
         // Checkout Preferences
         item {
             Surface(
