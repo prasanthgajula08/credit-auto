@@ -25,6 +25,7 @@ import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
@@ -272,65 +273,91 @@ fun SettingsScreen(
                     onCheckedChange = onToggleAutoCheckUpdates
                 )
                 SettingsDivider()
+                val isBusy = updateStatus is UpdateStatus.Checking || updateStatus is UpdateStatus.Downloading
+                val updateSubtitle = when (updateStatus) {
+                    is UpdateStatus.Checking -> "Checking GitHub Releases…"
+                    is UpdateStatus.UpToDate -> "You're on the latest version (v${BuildConfig.VERSION_NAME})"
+                    is UpdateStatus.Available -> "Version ${updateStatus.info.tagName} ready — tap to install"
+                    is UpdateStatus.Downloading -> "Downloading ${updateStatus.info.tagName}… ${updateStatus.progressPercent}%"
+                    is UpdateStatus.Error -> updateStatus.message
+                    UpdateStatus.Idle -> "Tap to check for a newer release"
+                }
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Button(
-                        onClick = onCheckForUpdates,
-                        shape = CircleShape,
-                        enabled = updateStatus !is UpdateStatus.Checking && updateStatus !is UpdateStatus.Downloading
-                    ) {
-                        Icon(
-                            AppIcons.SystemUpdate,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            if (updateStatus is UpdateStatus.Checking) "Checking…"
-                            else "Check for updates"
-                        )
-                    }
-
-                    when (updateStatus) {
-                        is UpdateStatus.Available -> {
-                            Button(
-                                onClick = onInstallUpdate,
-                                shape = CircleShape,
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text("Download & install ${updateStatus.info.tagName}")
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = !isBusy) {
+                            if (updateStatus is UpdateStatus.Available) {
+                                onInstallUpdate()
+                            } else {
+                                onCheckForUpdates()
                             }
                         }
-                        is UpdateStatus.Downloading -> {
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Downloading ${updateStatus.info.tagName}… ${updateStatus.progressPercent}%",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                text = if (updateStatus is UpdateStatus.Available) {
+                                    "Install ${updateStatus.info.tagName}"
+                                } else {
+                                    "Check for updates"
+                                },
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (updateStatus is UpdateStatus.Available) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
                             )
-                            LinearProgressIndicator(
-                                progress = { updateStatus.progressPercent / 100f },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(CircleShape)
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = updateSubtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = when (updateStatus) {
+                                    is UpdateStatus.Error -> MaterialTheme.colorScheme.error
+                                    is UpdateStatus.UpToDate -> MaterialTheme.colorScheme.secondary
+                                    is UpdateStatus.Available -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                             )
                         }
-                        is UpdateStatus.UpToDate -> {
-                            Text(
-                                text = "You're on the latest version (v${BuildConfig.VERSION_NAME}).",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.secondary
+                        Spacer(modifier = Modifier.width(12.dp))
+                        when (updateStatus) {
+                            is UpdateStatus.Checking -> CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            is UpdateStatus.Available -> Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = "Update",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                                )
+                            }
+                            else -> Icon(
+                                imageVector = AppIcons.SystemUpdate,
+                                contentDescription = "Check for updates",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
-                        is UpdateStatus.Error -> {
-                            Text(
-                                text = updateStatus.message,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                        else -> Unit
+                    }
+
+                    if (updateStatus is UpdateStatus.Downloading) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LinearProgressIndicator(
+                            progress = { updateStatus.progressPercent / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(CircleShape)
+                        )
                     }
                 }
                 SettingsDivider()

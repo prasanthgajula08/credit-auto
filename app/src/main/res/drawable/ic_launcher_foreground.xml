@@ -4,17 +4,43 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Stylized credit card with golden spark -->
+    <!-- Back card (Google Green) peeking out at top inside 66dp safe zone -->
     <path
-        android:fillColor="#38BDF8"
-        android:pathData="M24,36C24,32.7 26.7,30 30,30H78C81.3,30 84,32.7 84,36V72C84,75.3 81.3,78 78,78H30C26.7,78 24,75.3 24,72Z" />
+        android:fillColor="#34A853"
+        android:pathData="M34,27 H74 C77.31,27 80,29.69 80,33 V48 H28 V33 C28,29.69 30.69,27 34,27 Z" />
+
+    <!-- Middle card (Google Yellow) peeking out cleanly -->
     <path
-        android:fillColor="#0F172A"
-        android:pathData="M24,42H84V50H24Z" />
+        android:fillColor="#FBBC04"
+        android:pathData="M31,34 H77 C80.31,34 83,36.69 83,40 V56 H25 V40 C25,36.69 27.69,34 31,34 Z" />
+
+    <!-- Accent red strip edge on middle-right for authentic Google 4-color harmony -->
     <path
-        android:fillColor="#FACC15"
-        android:pathData="M34,58H46V66H34Z" />
+        android:fillColor="#EA4335"
+        android:pathData="M62,34 H77 C80.31,34 83,36.69 83,40 V45 H62 Z" />
+
+    <!-- Primary front smart-card (Google Blue) -->
+    <path
+        android:fillColor="#1A73E8"
+        android:pathData="M29,42 H79 C82.87,42 86,45.13 86,49 V73 C86,76.87 82.87,80 79,80 H29 C25.13,80 22,76.87 22,73 V49 C22,45.13 25.13,42 29,42 Z" />
+
+    <!-- Subtle tonal highlight sweep on front card -->
+    <path
+        android:fillColor="#4285F4"
+        android:pathData="M29,42 H60 L44,80 H29 C25.13,80 22,76.87 22,73 V49 C22,45.13 25.13,42 29,42 Z" />
+
+    <!-- Clean white rounded EMV chip -->
+    <path
+        android:fillColor="#D3E3FD"
+        android:pathData="M33,55 H43 C44.66,55 46,56.34 46,58 V65 C46,66.66 44.66,68 43,68 H33 C31.34,68 30,66.66 30,65 V58 C30,56.34 31.34,55 33,55 Z" />
+
+    <!-- Crisp 4-point smart-auto rewards sparkle -->
     <path
         android:fillColor="#FFFFFF"
-        android:pathData="M68,54L70.5,60.5L77,63L70.5,65.5L68,72L65.5,65.5L59,63L65.5,60.5Z" />
+        android:pathData="M68,50 C68.8,56.2 71.8,59.2 78,60 C71.8,60.8 68.8,63.8 68,70 C67.2,63.8 64.2,60.8 58,60 C64.2,59.2 67.2,56.2 68,50 Z" />
+
+    <!-- Tiny companion sparkle dot -->
+    <path
+        android:fillColor="#D3E3FD"
+        android:pathData="M56,50 C56.3,52.2 57.3,53.2 59.5,53.5 C57.3,53.8 56.3,54.8 56,57 C55.7,54.8 54.7,53.8 52.5,53.5 C54.7,53.2 55.7,52.2 56,50 Z" />
 </vector>
