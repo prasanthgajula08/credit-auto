@@ -19,8 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Remove
-import androidx.compose.material.icons.rounded.SystemUpdate
+import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
@@ -275,7 +274,7 @@ fun SettingsScreen(
                             enabled = updateStatus !is UpdateStatus.Checking && updateStatus !is UpdateStatus.Downloading
                         ) {
                             Icon(
-                                Icons.Rounded.SystemUpdate,
+                                AppIcons.SystemUpdate,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -441,7 +440,7 @@ private fun PointValuationStepperRow(
                 modifier = Modifier.size(34.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Remove,
+                    imageVector = AppIcons.Remove,
                     contentDescription = "Decrease ${currency.displayName}",
                     modifier = Modifier.size(18.dp)
                 )

@@ -23,10 +23,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AddLocationAlt
-import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Place
+import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -165,7 +165,7 @@ fun SavedPlacesScreen(
 
         ExtendedFloatingActionButton(
             onClick = { showAddSheet = true },
-            icon = { Icon(Icons.Rounded.AddLocationAlt, contentDescription = null) },
+            icon = { Icon(AppIcons.AddLocation, contentDescription = null) },
             text = { Text("Save place") },
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -275,7 +275,7 @@ private fun SavedPlaceRow(
             }
             IconButton(onClick = onDelete) {
                 Icon(
-                    Icons.Rounded.DeleteOutline,
+                    Icons.Rounded.Delete,
                     contentDescription = "Delete saved place",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )

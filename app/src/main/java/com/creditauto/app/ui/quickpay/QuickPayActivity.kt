@@ -29,9 +29,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Refresh
+import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
@@ -317,7 +317,7 @@ private fun QuickPayOverlaySheet(
                         Text("Full app")
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
-                            Icons.AutoMirrored.Rounded.OpenInNew,
+                            AppIcons.OpenInNew,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )

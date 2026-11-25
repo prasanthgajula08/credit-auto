@@ -11,14 +11,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Contactless
-import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.Place
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.rounded.Contactless
-import androidx.compose.material.icons.rounded.CreditCard
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.Settings
+import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,8 +55,8 @@ private enum class MainTab(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    PAY_NOW("Pay", "Credit Auto", Icons.Rounded.Contactless, Icons.Outlined.Contactless),
-    MY_CARDS("Cards", "My cards", Icons.Rounded.CreditCard, Icons.Outlined.CreditCard),
+    PAY_NOW("Pay", "Credit Auto", AppIcons.Contactless, AppIcons.ContactlessOutlined),
+    MY_CARDS("Cards", "My cards", AppIcons.CreditCard, AppIcons.CreditCard),
     PLACES("Places", "Saved places", Icons.Rounded.Place, Icons.Outlined.Place),
     SETTINGS("Settings", "Settings", Icons.Rounded.Settings, Icons.Outlined.Settings)
 }

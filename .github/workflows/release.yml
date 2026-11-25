@@ -29,15 +29,14 @@ jobs:
           KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
           if [ -z "$KEYSTORE_B64" ]; then
-            echo "::error::SIGNING_KEYSTORE_BASE64 secret is missing! Add it under Repo Settings -> Secrets -> Actions so Android updates match your installed APK signature."
+            echo "::error::SIGNING_KEYSTORE_BASE64 secret is missing!"
             exit 1
           fi
           printf '%s' "$KEYSTORE_B64" | tr -d '[:space:]' | base64 --decode > "$RUNNER_TEMP/release.keystore"
           echo "RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
-          keytool -list -v -keystore "$RUNNER_TEMP/release.keystore" -storepass android -alias androiddebugkey | grep -E "Owner|SHA256"
 
       - name: Run unit tests & build R8-optimized release APK
-        run: ./gradlew testReleaseUnitTest assembleRelease
+        run: ./gradlew testReleaseUnitTest assembleRelease --build-cache --parallel
 
       - name: Rename APK for GitHub Release
         run: cp app/build/outputs/apk/release/app-release.apk CreditAuto.apk

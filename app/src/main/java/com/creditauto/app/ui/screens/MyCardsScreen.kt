@@ -25,11 +25,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.CreditCard
-import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
-import androidx.compose.material.icons.rounded.LibraryAdd
 import androidx.compose.material.icons.rounded.Search
+import com.creditauto.app.ui.components.AppIcons
+import com.creditauto.app.ui.components.MiniCreditCardThumbnail
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -159,7 +159,7 @@ fun MyCardsScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    Icons.Rounded.CreditCard,
+                                    AppIcons.CreditCard,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     modifier = Modifier.size(28.dp)
@@ -197,7 +197,7 @@ fun MyCardsScreen(
         // Material 3 Extended FAB for Card Catalog
         ExtendedFloatingActionButton(
             onClick = { showCatalogSheet = true },
-            icon = { Icon(Icons.Rounded.LibraryAdd, contentDescription = null) },
+            icon = { Icon(AppIcons.LibraryAdd, contentDescription = null) },
             text = { Text("Card catalog") },
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -245,9 +245,6 @@ private fun OwnedCardItem(
     onEdit: () -> Unit,
     onRemove: () -> Unit
 ) {
-    val baseColor = Color(card.colorHex)
-    val accentColor = Color(card.accentHex)
-
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -255,25 +252,7 @@ private fun OwnedCardItem(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Mini credit-card artwork badge
-                Box(
-                    modifier = Modifier
-                        .size(width = 52.dp, height = 34.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(
-                            Brush.linearGradient(
-                                listOf(baseColor, accentColor.copy(alpha = 0.55f))
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = card.network.shortBadge,
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Black
-                    )
-                }
+                MiniCreditCardThumbnail(card = card, width = 62.dp)
 
                 Spacer(modifier = Modifier.width(14.dp))
 
@@ -359,7 +338,7 @@ private fun OwnedCardItem(
                 }
                 IconButton(onClick = onRemove) {
                     Icon(
-                        Icons.Rounded.DeleteOutline,
+                        Icons.Rounded.Delete,
                         contentDescription = "Remove from wallet",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -456,20 +435,7 @@ private fun CardCatalogBottomSheet(
                                 .padding(horizontal = 14.dp, vertical = 10.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(width = 36.dp, height = 24.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(Color(card.colorHex)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = card.network.shortBadge,
-                                    color = Color.White,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
+                            MiniCreditCardThumbnail(card = card, width = 52.dp)
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(

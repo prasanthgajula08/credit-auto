@@ -25,15 +25,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.BookmarkAdd
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Contactless
-import androidx.compose.material.icons.rounded.CreditCard
-import androidx.compose.material.icons.rounded.MyLocation
-import androidx.compose.material.icons.rounded.Public
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.SystemUpdate
+import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -134,7 +129,7 @@ fun PayNowScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.SystemUpdate,
+                                    imageVector = AppIcons.SystemUpdate,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onTertiaryContainer,
                                     modifier = Modifier.size(20.dp)
@@ -201,7 +196,7 @@ fun PayNowScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.CreditCard,
+                            imageVector = AppIcons.CreditCard,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -286,7 +281,7 @@ fun PayNowScreen(
                             modifier = Modifier.size(38.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.BookmarkAdd,
+                                imageVector = AppIcons.BookmarkAdd,
                                 contentDescription = "Save store",
                                 modifier = Modifier.size(19.dp)
                             )
@@ -310,7 +305,7 @@ fun PayNowScreen(
                                 modifier = Modifier.size(38.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.MyLocation,
+                                    imageVector = AppIcons.MyLocation,
                                     contentDescription = "Detect nearby store",
                                     modifier = Modifier.size(19.dp)
                                 )
@@ -326,7 +321,7 @@ fun PayNowScreen(
                             label = { Text("Enable location to auto-detect stores") },
                             leadingIcon = {
                                 Icon(
-                                    Icons.Rounded.MyLocation,
+                                    AppIcons.MyLocation,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp)
                                 )
@@ -469,7 +464,7 @@ fun PayNowScreen(
                         shape = CircleShape,
                         leadingIcon = {
                             Icon(
-                                Icons.Rounded.Contactless,
+                                AppIcons.Contactless,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -500,7 +495,7 @@ fun PayNowScreen(
                         shape = CircleShape,
                         leadingIcon = {
                             Icon(
-                                Icons.Rounded.Public,
+                                AppIcons.PublicGlobe,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
