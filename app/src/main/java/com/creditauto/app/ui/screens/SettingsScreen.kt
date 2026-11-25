@@ -1,5 +1,6 @@
 package com.creditauto.app.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,22 +15,28 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.creditauto.app.BuildConfig
 import com.creditauto.app.domain.RewardCurrency
@@ -130,34 +139,22 @@ fun SettingsScreen(
                         )
                     }
 
-                    var radiusDraft by remember(settings.searchRadiusMeters) {
-                        mutableStateOf(settings.searchRadiusMeters.toFloat())
-                    }
+                    val radiusPresets = remember { listOf(100, 150, 250, 400) }
+                    Text("Nearby search radius", style = MaterialTheme.typography.bodyMedium)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Nearby search radius", style = MaterialTheme.typography.bodyMedium)
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh
-                        ) {
-                            Text(
-                                text = "${radiusDraft.roundToInt()}m",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                        radiusPresets.forEach { preset ->
+                            val selected = settings.searchRadiusMeters == preset
+                            FilterChip(
+                                selected = selected,
+                                onClick = { onUpdateSearchRadius(preset) },
+                                shape = CircleShape,
+                                label = { Text("${preset}m") }
                             )
                         }
                     }
-                    Slider(
-                        value = radiusDraft,
-                        onValueChange = { radiusDraft = it },
-                        onValueChangeFinished = { onUpdateSearchRadius(radiusDraft.roundToInt()) },
-                        valueRange = 50f..400f,
-                        steps = 6
-                    )
 
                     OutlinedTextField(
                         value = apiKeyDraft,
@@ -196,57 +193,46 @@ fun SettingsScreen(
             val pointCurrencies = remember {
                 RewardCurrency.entries.filter { it != RewardCurrency.CASH_BACK }
             }
+            var editingCurrency by remember { mutableStateOf<RewardCurrency?>(null) }
+
             SettingsSection(title = "Point valuations (¢ per point)") {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Customize what each points currency is worth to you so points and cash back compare accurately.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                Text(
+                    text = "Tap − / + to adjust by 0.1¢, or tap any value to enter an exact amount.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp)
+                )
+                pointCurrencies.forEachIndexed { index, currency ->
+                    val currentVal = settings.pointValuations[currency]
+                        ?: currency.defaultCentsPerPoint
+                    PointValuationStepperRow(
+                        currency = currency,
+                        currentValue = currentVal,
+                        onStep = { delta ->
+                            val next = ((currentVal + delta) * 10.0).roundToInt() / 10.0
+                            onUpdatePointValuation(currency, next.coerceIn(0.5, 5.0))
+                        },
+                        onTapValue = { editingCurrency = currency }
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    pointCurrencies.forEach { currency ->
-                        val persistedVal = settings.pointValuations[currency]
-                            ?: currency.defaultCentsPerPoint
-                        var sliderVal by remember(currency, persistedVal) {
-                            mutableStateOf(persistedVal.toFloat())
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = currency.displayName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceContainerHigh
-                            ) {
-                                Text(
-                                    text = String.format(Locale.US, "%.1f¢", (sliderVal * 10f).roundToInt() / 10.0),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-                        Slider(
-                            value = sliderVal,
-                            onValueChange = { sliderVal = it },
-                            onValueChangeFinished = {
-                                val snapped = (sliderVal * 10f).roundToInt() / 10.0
-                                onUpdatePointValuation(currency, snapped)
-                            },
-                            valueRange = 0.5f..3.0f
-                        )
+                    if (index < pointCurrencies.lastIndex) {
+                        SettingsDivider()
                     }
                 }
+            }
+
+            val dialogCurrency = editingCurrency
+            if (dialogCurrency != null) {
+                val initial = settings.pointValuations[dialogCurrency]
+                    ?: dialogCurrency.defaultCentsPerPoint
+                PointValueEditDialog(
+                    currency = dialogCurrency,
+                    initialValue = initial,
+                    onDismiss = { editingCurrency = null },
+                    onSave = { updated ->
+                        onUpdatePointValuation(dialogCurrency, updated)
+                        editingCurrency = null
+                    }
+                )
             }
         }
 
@@ -415,6 +401,133 @@ private fun SettingsSwitchRow(
             }
         )
     }
+}
+
+@Composable
+private fun PointValuationStepperRow(
+    currency: RewardCurrency,
+    currentValue: Double,
+    onStep: (Double) -> Unit,
+    onTapValue: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = currency.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = String.format(Locale.US, "Default %.1f¢", currency.defaultCentsPerPoint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            FilledTonalIconButton(
+                onClick = { onStep(-0.1) },
+                enabled = currentValue > 0.51,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Remove,
+                    contentDescription = "Decrease ${currency.displayName}",
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable(onClick = onTapValue)
+            ) {
+                Text(
+                    text = String.format(Locale.US, "%.1f¢", currentValue),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .width(56.dp)
+                        .padding(vertical = 6.dp)
+                )
+            }
+
+            FilledTonalIconButton(
+                onClick = { onStep(0.1) },
+                enabled = currentValue < 4.99,
+                modifier = Modifier.size(34.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Add,
+                    contentDescription = "Increase ${currency.displayName}",
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PointValueEditDialog(
+    currency: RewardCurrency,
+    initialValue: Double,
+    onDismiss: () -> Unit,
+    onSave: (Double) -> Unit
+) {
+    var draft by remember { mutableStateOf(String.format(Locale.US, "%.2f", initialValue)) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(currency.displayName) },
+        text = {
+            OutlinedTextField(
+                value = draft,
+                onValueChange = { draft = it },
+                label = { Text("Cents per point (¢)") },
+                singleLine = true,
+                shape = RoundedCornerShape(16.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val parsed = draft.trim().toDoubleOrNull()
+                    if (parsed != null) onSave(parsed.coerceIn(0.1, 10.0))
+                },
+                shape = CircleShape
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(
+                    onClick = { onSave(currency.defaultCentsPerPoint) }
+                ) {
+                    Text("Reset")
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancel")
+                }
+            }
+        }
+    )
 }
 
 @Composable
