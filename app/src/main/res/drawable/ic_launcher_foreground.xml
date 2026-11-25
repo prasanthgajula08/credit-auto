@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Stylized credit card with golden spark -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M24,36C24,32.7 26.7,30 30,30H78C81.3,30 84,32.7 84,36V72C84,75.3 81.3,78 78,78H30C26.7,78 24,75.3 24,72Z" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M24,42H84V50H24Z" />
+    <path
+        android:fillColor="#FACC15"
+        android:pathData="M34,58H46V66H34Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M68,54L70.5,60.5L77,63L70.5,65.5L68,72L65.5,65.5L59,63L65.5,60.5Z" />
+</vector>
