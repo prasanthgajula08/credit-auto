@@ -13,8 +13,8 @@ android {
         applicationId = "com.creditauto.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.5.1"
+        versionCode = 13
+        versionName = "1.5.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

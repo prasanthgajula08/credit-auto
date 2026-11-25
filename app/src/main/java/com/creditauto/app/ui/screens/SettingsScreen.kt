@@ -1,5 +1,7 @@
 package com.creditauto.app.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import com.creditauto.app.ui.components.AppIcons
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -44,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -154,11 +158,25 @@ fun SettingsScreen(
                             )
                         }
                     }
+                }
 
+                SettingsDivider()
+
+                var showApiKeyEditor by remember { mutableStateOf(false) }
+                ExpandableSettingsRow(
+                    title = "Google Places API key",
+                    subtitle = if (settings.googlePlacesApiKey.isNotBlank()) {
+                        "Configured • Using Google Places"
+                    } else {
+                        "Optional • Using free OpenStreetMap"
+                    },
+                    expanded = showApiKeyEditor,
+                    onToggle = { showApiKeyEditor = !showApiKeyEditor }
+                ) {
                     OutlinedTextField(
                         value = apiKeyDraft,
                         onValueChange = { apiKeyDraft = it },
-                        label = { Text("Optional Google Places API key") },
+                        label = { Text("Google Places API key") },
                         placeholder = { Text("Leave blank for free OpenStreetMap") },
                         singleLine = true,
                         shape = RoundedCornerShape(16.dp),
@@ -166,7 +184,10 @@ fun SettingsScreen(
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilledTonalButton(
-                            onClick = { onUpdateGooglePlacesKey(apiKeyDraft) },
+                            onClick = {
+                                onUpdateGooglePlacesKey(apiKeyDraft)
+                                showApiKeyEditor = false
+                            },
                             shape = CircleShape
                         ) {
                             Text("Save key")
@@ -176,6 +197,7 @@ fun SettingsScreen(
                                 onClick = {
                                     apiKeyDraft = ""
                                     onUpdateGooglePlacesKey("")
+                                    showApiKeyEditor = false
                                 },
                                 shape = CircleShape
                             ) {
@@ -240,6 +262,8 @@ fun SettingsScreen(
             var repoDraft by remember(settings.updateRepoSlug) {
                 mutableStateOf(settings.updateRepoSlug)
             }
+            var showRepoEditor by remember { mutableStateOf(false) }
+
             SettingsSection(title = "App updates • v${BuildConfig.VERSION_NAME}") {
                 SettingsSwitchRow(
                     title = "Auto-check GitHub Releases",
@@ -252,38 +276,21 @@ fun SettingsScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedTextField(
-                        value = repoDraft,
-                        onValueChange = { repoDraft = it },
-                        label = { Text("GitHub repository (owner/repo)") },
-                        singleLine = true,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { onUpdateRepoSlug(repoDraft) },
-                            shape = CircleShape
-                        ) {
-                            Text("Save repo")
-                        }
-                        Button(
-                            onClick = onCheckForUpdates,
-                            shape = CircleShape,
-                            enabled = updateStatus !is UpdateStatus.Checking && updateStatus !is UpdateStatus.Downloading
-                        ) {
-                            Icon(
-                                AppIcons.SystemUpdate,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                if (updateStatus is UpdateStatus.Checking) "Checking…"
-                                else "Check for updates"
-                            )
-                        }
+                    Button(
+                        onClick = onCheckForUpdates,
+                        shape = CircleShape,
+                        enabled = updateStatus !is UpdateStatus.Checking && updateStatus !is UpdateStatus.Downloading
+                    ) {
+                        Icon(
+                            AppIcons.SystemUpdate,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            if (updateStatus is UpdateStatus.Checking) "Checking…"
+                            else "Check for updates"
+                        )
                     }
 
                     when (updateStatus) {
@@ -324,6 +331,31 @@ fun SettingsScreen(
                             )
                         }
                         else -> Unit
+                    }
+                }
+                SettingsDivider()
+                ExpandableSettingsRow(
+                    title = "GitHub repository",
+                    subtitle = settings.updateRepoSlug.ifBlank { "Not configured" },
+                    expanded = showRepoEditor,
+                    onToggle = { showRepoEditor = !showRepoEditor }
+                ) {
+                    OutlinedTextField(
+                        value = repoDraft,
+                        onValueChange = { repoDraft = it },
+                        label = { Text("GitHub repository (owner/repo)") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    FilledTonalButton(
+                        onClick = {
+                            onUpdateRepoSlug(repoDraft)
+                            showRepoEditor = false
+                        },
+                        shape = CircleShape
+                    ) {
+                        Text("Save repo")
                     }
                 }
             }
@@ -527,6 +559,62 @@ private fun PointValueEditDialog(
             }
         }
     )
+}
+
+@Composable
+private fun ExpandableSettingsRow(
+    title: String,
+    subtitle: String,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        label = "chevron_rotation"
+    )
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onToggle)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Rounded.KeyboardArrowDown,
+                contentDescription = if (expanded) "Collapse" else "Expand",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.rotate(rotation)
+            )
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp, end = 16.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                content()
+            }
+        }
+    }
 }
 
 @Composable
