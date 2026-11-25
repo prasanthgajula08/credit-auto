@@ -131,6 +131,9 @@ private fun CreditAutoRoot(
                     viewModel.setBackgroundPrefetchEnabled(true)
                 }
                 viewModel.resumePendingInstallIfPermitted()
+                if (uiState.settings.autoCheckUpdates) {
+                    viewModel.checkForUpdates(manual = false)
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

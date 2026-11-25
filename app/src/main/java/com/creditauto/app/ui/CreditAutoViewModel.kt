@@ -81,6 +81,7 @@ class CreditAutoViewModel(application: Application) : AndroidViewModel(applicati
     private val _updateStatus = MutableStateFlow<UpdateStatus>(UpdateStatus.Idle)
     val updateStatus: StateFlow<UpdateStatus> = _updateStatus.asStateFlow()
     private var pendingDownloadedApk: File? = null
+    private var awaitingInstallPermission: Boolean = false
     private var lastAutoUpdateCheckMs: Long = 0L
     private var detectionJob: Job? = null
 
@@ -492,7 +493,7 @@ class CreditAutoViewModel(application: Application) : AndroidViewModel(applicati
             }
 
             val now = System.currentTimeMillis()
-            if (!manual && (now - lastAutoUpdateCheckMs) < 30 * 60_000L) {
+            if (!manual && (now - lastAutoUpdateCheckMs) < 2 * 60_000L) {
                 return@launch
             }
             lastAutoUpdateCheckMs = now
@@ -550,10 +551,12 @@ class CreditAutoViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun resumePendingInstallIfPermitted() {
+        if (!awaitingInstallPermission) return
         val apk = pendingDownloadedApk ?: return
         val status = _updateStatus.value
         val info = (status as? UpdateStatus.Available)?.info ?: return
         if (apk.exists() && app.packageManager.canRequestPackageInstalls()) {
+            awaitingInstallPermission = false
             launchDownloadedApk(apk, info)
         }
     }
@@ -561,15 +564,18 @@ class CreditAutoViewModel(application: Application) : AndroidViewModel(applicati
     private fun launchDownloadedApk(apkFile: File, info: ReleaseUpdateInfo) {
         when (appUpdater.launchInstaller(app, apkFile)) {
             InstallLaunchResult.LAUNCHED_INSTALLER -> {
+                awaitingInstallPermission = false
                 _updateStatus.value = UpdateStatus.Available(info)
             }
             InstallLaunchResult.NEEDS_INSTALL_PERMISSION -> {
+                awaitingInstallPermission = true
                 _updateStatus.value = UpdateStatus.Available(info)
                 sessionState.value = sessionState.value.copy(
                     transientBanner = "Enable \"Allow from this source\" for Credit Auto, then return to install"
                 )
             }
             InstallLaunchResult.FAILED -> {
+                awaitingInstallPermission = false
                 _updateStatus.value = UpdateStatus.Error("Could not launch Android installer")
             }
         }

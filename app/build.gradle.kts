@@ -13,8 +13,8 @@ android {
         applicationId = "com.creditauto.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "1.2.1"
+        versionCode = 7
+        versionName = "1.2.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -22,11 +22,28 @@ android {
         }
     }
 
+    signingConfigs {
+        create("ciRelease") {
+            val envPath = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (!envPath.isNullOrBlank() && file(envPath).exists()) {
+                storeFile = file(envPath)
+                storePassword = System.getenv("RELEASE_STORE_PASSWORD") ?: "android"
+                keyAlias = System.getenv("RELEASE_KEY_ALIAS") ?: "androiddebugkey"
+                keyPassword = System.getenv("RELEASE_KEY_PASSWORD") ?: "android"
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            val envPath = System.getenv("RELEASE_KEYSTORE_PATH")
+            signingConfig = if (!envPath.isNullOrBlank() && file(envPath).exists()) {
+                signingConfigs.getByName("ciRelease")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
