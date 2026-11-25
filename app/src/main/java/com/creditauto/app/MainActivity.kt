@@ -55,7 +55,7 @@ private enum class MainTab(
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
-    PAY_NOW("Pay", "Credit Auto", AppIcons.Contactless, AppIcons.ContactlessOutlined),
+    PAY_NOW("Pay", "Points Maximizer", AppIcons.Contactless, AppIcons.ContactlessOutlined),
     MY_CARDS("Cards", "My cards", AppIcons.CreditCard, AppIcons.CreditCard),
     PLACES("Places", "Saved places", Icons.Rounded.Place, Icons.Outlined.Place),
     SETTINGS("Settings", "Settings", Icons.Rounded.Settings, Icons.Outlined.Settings)

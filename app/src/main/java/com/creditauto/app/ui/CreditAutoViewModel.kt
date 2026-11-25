@@ -509,7 +509,7 @@ class CreditAutoViewModel(application: Application) : AndroidViewModel(applicati
                 } else if (manual) {
                     _updateStatus.value = UpdateStatus.UpToDate
                     sessionState.value = sessionState.value.copy(
-                        transientBanner = "Credit Auto v${BuildConfig.VERSION_NAME} is up to date"
+                        transientBanner = "Points Maximizer v${BuildConfig.VERSION_NAME} is up to date"
                     )
                 }
             }.onFailure { err ->
@@ -571,7 +571,7 @@ class CreditAutoViewModel(application: Application) : AndroidViewModel(applicati
                 awaitingInstallPermission = true
                 _updateStatus.value = UpdateStatus.Available(info)
                 sessionState.value = sessionState.value.copy(
-                    transientBanner = "Enable \"Allow from this source\" for Credit Auto, then return to install"
+                    transientBanner = "Enable \"Allow from this source\" for Points Maximizer, then return to install"
                 )
             }
             InstallLaunchResult.FAILED -> {

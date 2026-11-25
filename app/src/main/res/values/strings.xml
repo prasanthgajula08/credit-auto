@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Credit Auto</string>
+    <string name="app_name">Points Maximizer</string>
     <string name="tile_label">Best Card</string>
     <string name="notification_channel_checkout">Checkout Card Reminder</string>
     <string name="notification_channel_checkout_desc">Shows your recommended credit card while switching to Google Wallet</string>
